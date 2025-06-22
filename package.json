@@ -3,6 +3,11 @@
   "version": "1.0.0",
   "main": "index.js",
   "license": "ISC",
+  "scripts": {
+  "start": "tsx index.ts",
+  "dev": "tsx watch index.ts"
+},
+
   "dependencies": {
     "@prisma/client": "^6.9.0",
     "bcrypt": "^5.0.1",
