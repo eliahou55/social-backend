@@ -23,12 +23,20 @@ app.use((req, res, next) => {
   next();
 });
 
-// ✅ CORS config Vercel + localhost
+// ✅ CORS dynamique : autorise Vercel + localhost uniquement
 app.use(cors({
-  origin: [
-    'http://localhost:5173',
-    'https://social-worlds.vercel.app',
-  ],
+  origin: (origin, callback) => {
+    console.log("🌍 Requête depuis :", origin);
+    const allowedOrigins = [
+      'http://localhost:5173',
+      'https://social-worlds.vercel.app'
+    ];
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
@@ -46,13 +54,19 @@ app.use('/api/posts', commentRoutes);
 app.use('/api/likes', likeRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/follow', followRoutes);
-console.log('✅ Backend ready');
-
 
 // ✅ Route simple de test
 app.get('/api/ping', (req, res) => {
   res.send('pong 🏓');
 });
+
+// ❌ Middleware global d’erreur
+app.use((err: any, req: any, res: any, next: any) => {
+  console.error('❌ Erreur serveur :', err.message);
+  res.status(500).json({ error: 'Erreur interne serveur (voir logs)' });
+});
+
+console.log('✅ Backend ready');
 
 app.listen(3000, () => {
   console.log('🚀 Server is running at http://localhost:3000');
