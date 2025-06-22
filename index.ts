@@ -46,6 +46,8 @@ app.use('/api/posts', commentRoutes);
 app.use('/api/likes', likeRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/follow', followRoutes);
+console.log('✅ Backend ready');
+
 
 // ✅ Route simple de test
 app.get('/api/ping', (req, res) => {
