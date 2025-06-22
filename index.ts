@@ -23,15 +23,27 @@ app.use((req, res, next) => {
   next();
 });
 
-// ✅ CORS dynamique : autorise Vercel + localhost uniquement
+// ✅ Middleware pour capturer les requêtes interrompues
+app.use((req, res, next) => {
+  req.on('aborted', () => {
+    console.error('❌ Requête interrompue par le client');
+  });
+  next();
+});
+
+// ✅ CORS dynamique avec whitelist + support des previews vercel
 app.use(cors({
   origin: (origin, callback) => {
     console.log("🌍 Requête depuis :", origin);
+
     const allowedOrigins = [
       'http://localhost:5173',
       'https://social-worlds.vercel.app'
     ];
-    if (!origin || allowedOrigins.includes(origin)) {
+
+    const isVercelPreview = origin?.endsWith('.vercel.app');
+
+    if (!origin || allowedOrigins.includes(origin) || isVercelPreview) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
@@ -45,22 +57,22 @@ app.use(cors({
 app.use(express.json());
 
 // 📦 Routes montées sur /api/*
-app.use('/api', authRoutes);           // /api/login, /api/register
-app.use('/api/posts', postRoutes);     // /api/posts
-app.use('/api', userRoutes);           // /api/me, /api/users/search
-app.use('/api/user', userRoutes);      // /api/user/media/add
+app.use('/api', authRoutes);
+app.use('/api/posts', postRoutes);
+app.use('/api', userRoutes);
+app.use('/api/user', userRoutes);
 app.use('/api/messages', messageRoutes);
-app.use('/api/posts', commentRoutes); 
+app.use('/api/posts', commentRoutes);
 app.use('/api/likes', likeRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/follow', followRoutes);
 
-// ✅ Route simple de test
+// ✅ Route de test
 app.get('/api/ping', (req, res) => {
   res.send('pong 🏓');
 });
 
-// ❌ Middleware global d’erreur
+// ❌ Gestion des erreurs globales
 app.use((err: any, req: any, res: any, next: any) => {
   console.error('❌ Erreur serveur :', err.message);
   res.status(500).json({ error: 'Erreur interne serveur (voir logs)' });
