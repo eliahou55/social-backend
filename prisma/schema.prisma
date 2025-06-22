@@ -1,0 +1,110 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int       @id @default(autoincrement())
+  email        String    @unique
+  password     String
+  username     String    @unique
+  isVerified   Boolean   @default(false)  
+  isPrivate    Boolean   @default(false)
+  bio          String?
+  avatarUrl    String?
+  createdAt    DateTime  @default(now())
+
+  posts        Post[]
+  comments     Comment[]
+  likes        Like[]
+  followers    Follow[]  @relation("followers")
+  following    Follow[]  @relation("following")
+  sentMessages     Message[] @relation("sentMessages")
+  receivedMessages Message[] @relation("receivedMessages")
+  friendRequestsSent    FriendRequest[] @relation("sentRequests")
+  friendRequestsReceived FriendRequest[] @relation("receivedRequests")
+  medias       Media[]  // 🆕 Galerie (photos + vidéos)
+}
+
+model Post {
+  id         Int       @id @default(autoincrement())
+  content    String?
+  mediaUrl   String?
+  createdAt  DateTime  @default(now())
+  author     User      @relation(fields: [authorId], references: [id])
+  authorId   Int
+  comments   Comment[]
+  likes      Like[]
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  content   String
+  createdAt DateTime @default(now())
+  post      Post     @relation(fields: [postId], references: [id])
+  postId    Int
+  author    User     @relation(fields: [authorId], references: [id])
+  authorId  Int
+}
+
+model Like {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  post      Post     @relation(fields: [postId], references: [id])
+  postId    Int
+}
+
+model Follow {
+  id           Int    @id @default(autoincrement())
+  follower     User   @relation("followers", fields: [followerId], references: [id])
+  followerId   Int
+  following    User   @relation("following", fields: [followingId], references: [id])
+  followingId  Int
+  createdAt    DateTime @default(now())
+
+  @@unique([followerId, followingId]) // ← AJOUTE BIEN ÇA si c'est pas fait
+}
+
+
+model FriendRequest {
+  id         Int    @id @default(autoincrement())
+  sender     User   @relation("sentRequests", fields: [senderId], references: [id])
+  senderId   Int
+  receiver   User   @relation("receivedRequests", fields: [receiverId], references: [id])
+  receiverId Int
+  status     String  @default("pending") // "pending", "accepted", "declined"
+  createdAt  DateTime @default(now())
+}
+
+model Message {
+  id         Int    @id @default(autoincrement())
+  content    String
+  createdAt  DateTime @default(now())
+  sender     User   @relation("sentMessages", fields: [senderId], references: [id])
+  senderId   Int
+  receiver   User   @relation("receivedMessages", fields: [receiverId], references: [id])
+  receiverId Int
+}
+
+model VerificationCode {
+  id        Int      @id @default(autoincrement())
+  email     String
+  code      String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Media {
+  id        Int      @id @default(autoincrement())
+  url       String
+  type      String   // 'image' ou 'video'
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+}
